@@ -1,5 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
@@ -11,8 +11,8 @@ const isProtectedRoute = createRouteMatcher([
 
 const isAuthRoute = createRouteMatcher(["/login(.*)", "/register(.*)", "/forgot-password(.*)"]);
 
-export default clerkMiddleware(async (auth, req) => {
-  // If Clerk environment variables are missing (e.g. initial Vercel deploy without env vars set)
+export default async function middleware(req: NextRequest) {
+  // If Clerk environment variables are missing on Vercel
   if (!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || !process.env.CLERK_SECRET_KEY) {
     if (isProtectedRoute(req)) {
       return NextResponse.redirect(new URL("/login", req.url));
@@ -20,18 +20,31 @@ export default clerkMiddleware(async (auth, req) => {
     return NextResponse.next();
   }
 
-  const { userId } = await auth();
+  try {
+    // Invoke clerkMiddleware safely
+    const clerkHandler = clerkMiddleware(async (auth, request) => {
+      const { userId } = await auth();
 
-  if (userId && isAuthRoute(req)) {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
+      if (userId && isAuthRoute(request)) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
 
-  if (!userId && isProtectedRoute(req)) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("redirect_url", req.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
+      if (!userId && isProtectedRoute(request)) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect_url", request.nextUrl.pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    });
+
+    return await clerkHandler(req, {} as never);
+  } catch (error) {
+    console.error("Clerk Middleware Execution Error:", error);
+    if (isProtectedRoute(req)) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    return NextResponse.next();
   }
-});
+}
 
 export const config = {
   matcher: [
