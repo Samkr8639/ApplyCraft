@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #eef0ec;
+  --color-ink: #1b1e2a;
+  --color-signal-gold: #d6a44c;
+  --color-deep-teal: #1c5c56;
+  --color-brick: #b15340;
+  --color-mist: #c7ccc5;
+
+  --font-display: var(--font-space-grotesk), sans-serif;
+  --font-body: var(--font-ibm-plex-sans), sans-serif;
+  --font-mono-data: var(--font-ibm-plex-mono), monospace;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+}
+
+:root {
+  --background: var(--color-paper);
+  --foreground: var(--color-ink);
+  --border: var(--color-mist);
+  --primary: var(--color-deep-teal);
+  --accent: var(--color-signal-gold);
+  --destructive: var(--color-brick);
+}
+
+.dark {
+  --background: #14161f;
+  --foreground: #edefe9;
+  --border: #2d313f;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #14161f;
+    --foreground: #edefe9;
+    --border: #2d313f;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-display);
+}
+
+/* Custom global focus ring style */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
